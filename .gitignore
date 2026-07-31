@@ -1,4 +1,4 @@
-node_modules
-server/.env
-dist
-bulid
+node_modules/
+server/src/.env
+dist/
+bulid/
