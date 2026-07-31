@@ -1,12 +1,9 @@
 const express = require("express");
 
+const customerRoutes = require("./customer.routes");
+
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Insurance Management API v1",
-  });
-});
+router.use("/customers", customerRoutes);
 
 module.exports = router;
