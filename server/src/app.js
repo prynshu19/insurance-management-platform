@@ -6,6 +6,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const compression = require("compression");
 const { rateLimit } = require("express-rate-limit");
+const path = require("path");
+const fs = require("fs");
 
 const routes = require("./routes");
 const errorHandler = require("./middlewares/errorHandler.middleware");
@@ -18,13 +20,12 @@ app.use(helmet()); // Secure HTTP headers
 // CORS — allow requests from the configured client origin
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: process.env.CLIENT_URL || "*",
     credentials: true,
   })
 );
 
 // ─── Rate Limiting ─────────────────────────────────────────────────────────────
-// Apply a general limiter to all /api routes (100 req / 15 min per IP)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
@@ -36,7 +37,6 @@ const apiLimiter = rateLimit({
   },
 });
 
-// Tighter limiter for auth endpoints (10 req / 15 min)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -75,6 +75,21 @@ app.get("/health", (req, res) => {
 
 // ─── API Routes ────────────────────────────────────────────────────────────────
 app.use("/api/v1", routes);
+
+// ─── Serve React Frontend Build (for full-stack production deployments) ────────
+const clientBuildPath = path.join(__dirname, "../../client/dist");
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+
+  app.get("*", (req, res, next) => {
+    if (req.originalUrl.startsWith("/api") || req.originalUrl.startsWith("/health")) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, "index.html"), (err) => {
+      if (err) next(err);
+    });
+  });
+}
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
