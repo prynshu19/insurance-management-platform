@@ -1,7 +1,8 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
-  LayoutDashboard, CreditCard, DollarSign,
-  BarChart2, MessageSquare, LogOut, Shield, Users, FileText, AlertCircle
+  LayoutDashboard, DollarSign, BarChart2,
+  MessageSquare, LogOut, Shield, Users, FileText, AlertCircle, Sparkles, X
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -18,6 +19,8 @@ const navItems = [
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [accountType, setAccountType] = useState("Personal");
+  const [showPromoModal, setShowPromoModal] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -25,91 +28,149 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-[220px] min-h-screen bg-white flex flex-col border-r border-gray-100 shadow-sm">
-
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-100">
-        <div className="w-8 h-8 bg-[#00C48C] rounded-lg flex items-center justify-center">
-          <Shield size={16} className="text-white" />
+    <aside className="w-[240px] shrink-0 min-h-screen bg-white flex flex-col justify-between border-r border-gray-100 shadow-sm z-10">
+      <div>
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-6 py-6 border-b border-gray-100">
+          <div className="w-8 h-8 bg-brand-green rounded-xl flex items-center justify-center shadow-sm">
+            <Shield size={18} className="text-white" />
+          </div>
+          <span className="font-bold text-gray-800 text-lg tracking-tight">InsurCo</span>
         </div>
-        <span className="font-bold text-gray-800 text-base">InsurCo</span>
-      </div>
 
-      {/* User Info */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF6B6B] to-[#FF4B4B] flex items-center justify-center text-white font-bold text-sm">
-          {user?.name?.charAt(0).toUpperCase()}
+        {/* User Info */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF6B6B] to-[#FF4B4B] flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
+            {user?.name?.charAt(0).toUpperCase() || "U"}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-400 font-medium">Hi,</p>
+            <p className="text-sm font-bold text-gray-800 truncate">{user?.name || "Member"}</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-xs text-gray-400">Hi,</p>
-          <p className="text-sm font-semibold text-gray-800 truncate">{user?.name}</p>
+
+        {/* Search */}
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2.5 bg-gray-50/80 hover:bg-gray-100/80 rounded-xl px-3.5 py-2.5 border border-gray-100 transition">
+            <svg className="text-gray-400 shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search keyword"
+              className="bg-transparent text-xs text-gray-700 outline-none w-full placeholder-gray-400"
+            />
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="px-4 py-2">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider px-3 mb-2">Menu</p>
+          <ul className="space-y-1">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <li key={to}>
+                <NavLink
+                  to={to}
+                  end={to === "/dashboard"}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? "bg-[#E8FFF7] text-brand-green font-bold shadow-sm"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon size={18} className={isActive ? "text-brand-green" : "text-gray-400"} />
+                      <span>{label}</span>
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      <div>
+        {/* Type Toggle */}
+        <div className="px-6 pb-4">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Type:</p>
+          <div className="flex gap-1 bg-gray-100/80 rounded-xl p-1">
+            <button
+              onClick={() => setAccountType("Personal")}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
+                accountType === "Personal"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Personal
+            </button>
+            <button
+              onClick={() => setAccountType("Business")}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
+                accountType === "Business"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Business
+            </button>
+          </div>
+        </div>
+
+        {/* Family Insurance Promo Card */}
+        <div className="mx-5 mb-5 p-4 bg-[#E8FFF7] rounded-2xl text-center border border-emerald-100 shadow-sm">
+          <p className="text-xs font-bold text-gray-800 leading-tight mb-1">Ideal Plan For Family Insurance</p>
+          <button
+            onClick={() => setShowPromoModal(true)}
+            className="mt-1.5 text-xs text-brand-green font-bold hover:underline inline-flex items-center gap-1"
+          >
+            <Sparkles size={13} /> Learn More
+          </button>
+        </div>
+
+        {/* Logout */}
+        <div className="px-5 pb-6">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-red-50 hover:text-brand-red transition duration-200"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-          <svg className="text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" placeholder="Search keyword" className="bg-transparent text-xs text-gray-500 outline-none w-full placeholder-gray-400" />
+      {/* Promo Learn More Modal */}
+      {showPromoModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Shield className="text-brand-green" size={20} /> Family Comprehensive Protection
+              </h3>
+              <button onClick={() => setShowPromoModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Our Family Insurance Plan covers medical payments, collision coverage, comprehensive property protection, and liability coverage for up to 6 family members with zero deductible on preventive checkups.
+            </p>
+            <div className="bg-emerald-50 p-4 rounded-xl text-xs text-brand-green font-semibold">
+              ✨ Currently active on your account with $2,294.00 remaining annual benefit limit.
+            </div>
+            <button
+              onClick={() => setShowPromoModal(false)}
+              className="w-full py-3 bg-brand-green text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition"
+            >
+              Got It
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-2">
-        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest px-2 mb-2">Menu</p>
-        <ul className="space-y-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <li key={to}>
-              <NavLink
-                to={to}
-                end={to === "/dashboard"}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-[#E8FFF7] text-[#00C48C] font-semibold"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon size={17} className={isActive ? "text-[#00C48C]" : "text-gray-400"} />
-                    {label}
-                  </>
-                )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Type Toggle */}
-      <div className="px-6 pb-4">
-        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mb-2">Type:</p>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          <button className="flex-1 py-1.5 text-xs font-semibold rounded-md bg-white text-gray-800 shadow-sm">Personal</button>
-          <button className="flex-1 py-1.5 text-xs font-medium rounded-md text-gray-400 hover:bg-white/50 transition">Business</button>
-        </div>
-      </div>
-
-      {/* Family Insurance Promo Card */}
-      <div className="mx-4 mb-4 p-4 bg-[#E8FFF7] rounded-2xl text-center">
-        <p className="text-xs font-semibold text-gray-700 leading-tight mb-1">Ideal Plan For Family Insurance</p>
-        <button className="mt-2 text-xs text-[#00C48C] font-semibold underline">Learn More</button>
-      </div>
-
-      {/* Logout */}
-      <div className="px-4 pb-6">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-[#FF4B4B] transition"
-        >
-          <LogOut size={17} />
-          Logout
-        </button>
-      </div>
+      )}
     </aside>
   );
 };
