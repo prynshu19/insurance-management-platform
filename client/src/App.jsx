@@ -12,6 +12,7 @@ import PoliciesPage from "./pages/policies/PoliciesPage";
 import ClaimsPage from "./pages/claims/ClaimsPage";
 import PaymentsPage from "./pages/payments/PaymentsPage";
 import ReportsPage from "./pages/reports/ReportsPage";
+import MessagesPage from "./pages/messages/MessagesPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/claims" element={<ClaimsPage />} />
                 <Route path="/payments" element={<PaymentsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
               </Route>
             </Route>
 
