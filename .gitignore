@@ -3,3 +3,6 @@ server/.env
 dist/
 bulid/
 coverage/
+.agents/
+.claude/
+.windsurf/
