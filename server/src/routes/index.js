@@ -8,7 +8,7 @@ const authRoutes = require("./auth.routes");
 
 const router = express.Router();
 
-route.use("/auth", authRoutes);
+router.use("/auth", authRoutes);
 
 router.use("/customers", customerRoutes);
 
