@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   LayoutDashboard, DollarSign, BarChart2,
-  MessageSquare, LogOut, Shield, Users, FileText, AlertCircle, Sparkles, X
+  MessageSquare, LogOut, Shield, Users, FileText, AlertCircle, Sparkles, X, CheckCircle2
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -21,14 +21,36 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [accountType, setAccountType] = useState("Personal");
   const [showPromoModal, setShowPromoModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 3000);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    triggerToast(`Searching system for "${searchQuery}"...`);
+    setSearchQuery("");
+  };
+
   return (
-    <aside className="w-[240px] shrink-0 min-h-screen bg-white flex flex-col justify-between border-r border-gray-100 shadow-sm z-10">
+    <aside className="w-[240px] shrink-0 min-h-screen bg-white flex flex-col justify-between border-r border-gray-100 shadow-sm z-10 relative">
+      {/* Toast */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 animate-fade-in">
+          <CheckCircle2 size={16} className="text-brand-green" />
+          {toastMessage}
+        </div>
+      )}
+
       <div>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-6 py-6 border-b border-gray-100">
@@ -49,19 +71,21 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="px-5 py-4">
+        {/* Search Form */}
+        <form onSubmit={handleSearchSubmit} className="px-5 py-4">
           <div className="flex items-center gap-2.5 bg-gray-50/80 hover:bg-gray-100/80 rounded-xl px-3.5 py-2.5 border border-gray-100 transition">
             <svg className="text-gray-400 shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
               type="text"
-              placeholder="Search keyword"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search keyword..."
               className="bg-transparent text-xs text-gray-700 outline-none w-full placeholder-gray-400"
             />
           </div>
-        </div>
+        </form>
 
         {/* Navigation */}
         <nav className="px-4 py-2">
@@ -99,7 +123,11 @@ const Sidebar = () => {
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Type:</p>
           <div className="flex gap-1 bg-gray-100/80 rounded-xl p-1">
             <button
-              onClick={() => setAccountType("Personal")}
+              type="button"
+              onClick={() => {
+                setAccountType("Personal");
+                triggerToast("Switched to Personal workspace");
+              }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
                 accountType === "Personal"
                   ? "bg-white text-gray-900 shadow-sm"
@@ -109,7 +137,11 @@ const Sidebar = () => {
               Personal
             </button>
             <button
-              onClick={() => setAccountType("Business")}
+              type="button"
+              onClick={() => {
+                setAccountType("Business");
+                triggerToast("Switched to Business workspace");
+              }}
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
                 accountType === "Business"
                   ? "bg-white text-gray-900 shadow-sm"
@@ -146,7 +178,7 @@ const Sidebar = () => {
 
       {/* Promo Learn More Modal */}
       {showPromoModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">

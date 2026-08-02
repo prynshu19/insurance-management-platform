@@ -3,45 +3,77 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Car, Heart, Home, Plus, SlidersHorizontal, CheckCircle2, ShieldCheck,
   CreditCard as CreditCardIcon, ChevronLeft, ChevronRight, Edit, ArrowRightLeft,
-  X, Check, DollarSign, Sparkles
+  X, Check, DollarSign, Sparkles, FileText, Share2, Download, Bell, Settings,
+  UserPlus, RefreshCw, AlertCircle, TrendingUp
 } from "lucide-react";
 import { getDashboardStats, getRecentActivities, getMonthlyRevenue } from "../../services/api";
 
 const DashboardPage = () => {
+  // Active states
   const [activeCoverageType, setActiveCoverageType] = useState("Auto Insurance");
   const [depositAmount, setDepositAmount] = useState("135");
   const [paymentMethod, setPaymentMethod] = useState("Credit");
+  const [timeRange, setTimeRange] = useState("7 days");
+  const [familyBalance, setFamilyBalance] = useState(2294.00);
+  const [virtualBalance, setVirtualBalance] = useState(24235.20);
+  
+  // Modal visibility states
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showAddPlanModal, setShowAddPlanModal] = useState(false);
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showEditCardModal, setShowEditCardModal] = useState(false);
+  const [showAddCardModal, setShowAddCardModal] = useState(false);
+  const [activeRequestDetail, setActiveRequestDetail] = useState(null);
+  const [activeMonthDetail, setActiveMonthDetail] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
 
-  // Interactive coverage checklist states
-  const [coverageItems, setCoverageItems] = useState([
-    { id: 1, label: "Medical payments coverage", checked: true },
-    { id: 2, label: "Collision coverage", checked: true },
-    { id: 3, label: "Comprehensive coverage", checked: false },
-    { id: 4, label: "Liability Coverage", checked: false },
-    { id: 5, label: "underinsured motorist coverage", checked: false },
-  ]);
-
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["dashboardStats"],
-    queryFn: getDashboardStats,
+  // Card details state for editing
+  const [cardInfo, setCardInfo] = useState({
+    name: "STAVE CRUZ",
+    number: "4766 1901 **** 2751",
+    expiry: "05/26",
   });
 
-  const { data: activities } = useQuery({
-    queryKey: ["recentActivities"],
-    queryFn: getRecentActivities,
-  });
+  // Dynamic coverage checklists per insurance type
+  const coverageMap = {
+    "Auto Insurance": [
+      { id: 1, label: "Medical payments coverage", checked: true },
+      { id: 2, label: "Collision coverage", checked: true },
+      { id: 3, label: "Comprehensive coverage", checked: false },
+      { id: 4, label: "Liability Coverage", checked: false },
+      { id: 5, label: "underinsured motorist coverage", checked: false },
+    ],
+    "Life Insurance": [
+      { id: 1, label: "Term Life Protection", checked: true },
+      { id: 2, label: "Accidental Death Benefit", checked: true },
+      { id: 3, label: "Critical Illness Rider", checked: true },
+      { id: 4, label: "Disability Income Protection", checked: false },
+      { id: 5, label: "Family Beneficiary Payout", checked: true },
+    ],
+    "Home Insurance": [
+      { id: 1, label: "Property Fire & Flood Protection", checked: true },
+      { id: 2, label: "Personal Liability Coverage", checked: true },
+      { id: 3, label: "Theft & Burglary Indemnity", checked: true },
+      { id: 4, label: "Temporary Living Expense Reimbursement", checked: false },
+      { id: 5, label: "Natural Disaster Shield", checked: true },
+    ],
+  };
 
-  const { data: revenue } = useQuery({
-    queryKey: ["monthlyRevenue"],
-    queryFn: getMonthlyRevenue,
-  });
+  const [coverageItems, setCoverageItems] = useState(coverageMap["Auto Insurance"]);
+
+  // Switch active insurance card and change checklist dynamically
+  const selectInsuranceCard = (type) => {
+    setActiveCoverageType(type);
+    setCoverageItems(coverageMap[type] || coverageMap["Auto Insurance"]);
+    triggerToast(`Viewing coverage details for ${type}`);
+  };
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 3000);
+    setTimeout(() => setToastMessage(""), 3500);
   };
 
   const toggleCoverage = (id) => {
@@ -51,8 +83,16 @@ const DashboardPage = () => {
   };
 
   const handleDeposit = () => {
-    if (!depositAmount || isNaN(depositAmount)) return;
-    triggerToast(`Successfully deposited $${depositAmount} USD to your account!`);
+    const amt = Number(depositAmount);
+    if (!depositAmount || isNaN(amt) || amt <= 0) return;
+    setVirtualBalance((prev) => prev + amt);
+    triggerToast(`Successfully deposited $${amt} USD to your virtual account!`);
+  };
+
+  const handleTopUp = (amt) => {
+    setFamilyBalance((prev) => prev + amt);
+    triggerToast(`Family Benefit Pool topped up by $${amt.toLocaleString()}!`);
+    setShowTopUpModal(false);
   };
 
   return (
@@ -75,24 +115,24 @@ const DashboardPage = () => {
             <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
             <p className="text-xs text-gray-400 mt-1 font-medium">check and maintain your insurance status</p>
           </div>
-          <div className="flex items-center gap-4 text-xs font-semibold text-gray-500">
+          <div className="flex items-center gap-3 text-xs font-semibold text-gray-600">
             <button
-              onClick={() => triggerToast("Sorting options opened")}
-              className="flex items-center gap-1.5 hover:text-gray-900 transition"
+              onClick={() => setShowSortModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-gray-50 border border-gray-100 shadow-sm transition"
             >
               <SlidersHorizontal size={14} /> Sort
             </button>
             <button
-              onClick={() => triggerToast("Showing all active widgets")}
-              className="flex items-center gap-1.5 text-gray-900 transition"
+              onClick={() => triggerToast("All 6 widgets are active on your dashboard")}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-brand-green border border-emerald-100 shadow-sm transition"
             >
               <CheckCircle2 size={14} className="text-brand-green" /> All widgets
             </button>
             <button
-              onClick={() => triggerToast("Settings dialog coming soon")}
-              className="flex items-center gap-1.5 hover:text-gray-900 transition"
+              onClick={() => setShowSettingsModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-gray-50 border border-gray-100 shadow-sm transition"
             >
-              <SlidersHorizontal size={14} /> Settings
+              <Settings size={14} /> Settings
             </button>
           </div>
         </div>
@@ -101,15 +141,20 @@ const DashboardPage = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Your Insurances</h2>
-            <button onClick={() => triggerToast("Manage plans")} className="text-gray-400 hover:text-gray-600 font-bold">•••</button>
+            <button
+              onClick={() => setShowAddPlanModal(true)}
+              className="text-xs text-brand-green font-bold hover:underline"
+            >
+              + Add Insurance
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Auto Insurance */}
             <div
-              onClick={() => setActiveCoverageType("Auto Insurance")}
+              onClick={() => selectInsuranceCard("Auto Insurance")}
               className={`bg-white rounded-2xl p-5 shadow-card border transition cursor-pointer flex flex-col justify-between h-36 ${
-                activeCoverageType === "Auto Insurance" ? "border-brand-green/40 ring-2 ring-brand-green/20" : "border-gray-100 hover:border-gray-200"
+                activeCoverageType === "Auto Insurance" ? "border-brand-green ring-2 ring-brand-green/20" : "border-gray-100 hover:border-gray-200"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -133,9 +178,9 @@ const DashboardPage = () => {
 
             {/* Life Insurance */}
             <div
-              onClick={() => setActiveCoverageType("Life Insurance")}
+              onClick={() => selectInsuranceCard("Life Insurance")}
               className={`bg-white rounded-2xl p-5 shadow-card border transition cursor-pointer flex flex-col justify-between h-36 ${
-                activeCoverageType === "Life Insurance" ? "border-pink-400/40 ring-2 ring-pink-400/20" : "border-gray-100 hover:border-gray-200"
+                activeCoverageType === "Life Insurance" ? "border-pink-500 ring-2 ring-pink-500/20" : "border-gray-100 hover:border-gray-200"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -159,9 +204,9 @@ const DashboardPage = () => {
 
             {/* Home Insurance */}
             <div
-              onClick={() => setActiveCoverageType("Home Insurance")}
+              onClick={() => selectInsuranceCard("Home Insurance")}
               className={`bg-white rounded-2xl p-5 shadow-card border transition cursor-pointer flex flex-col justify-between h-36 ${
-                activeCoverageType === "Home Insurance" ? "border-indigo-400/40 ring-2 ring-indigo-400/20" : "border-gray-100 hover:border-gray-200"
+                activeCoverageType === "Home Insurance" ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-100 hover:border-gray-200"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -187,6 +232,7 @@ const DashboardPage = () => {
             <div
               onClick={() => setShowAddPlanModal(true)}
               className="bg-[#FF4B4B] rounded-2xl p-5 shadow-card text-white flex items-center justify-center cursor-pointer hover:bg-[#E63939] transition h-36 group"
+              title="Add a new insurance policy plan"
             >
               <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center group-hover:scale-110 transition">
                 <Plus size={26} />
@@ -200,14 +246,19 @@ const DashboardPage = () => {
           <div>
             <h2 className="text-sm font-bold text-gray-800 mb-2">Family Insurance</h2>
             <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
+              <div
+                onClick={() => setShowInviteModal(true)}
+                className="flex -space-x-2 cursor-pointer hover:opacity-90 transition"
+                title="Click to view family members"
+              >
                 <div className="w-8 h-8 rounded-full bg-red-200 border-2 border-white overflow-hidden text-xs flex items-center justify-center font-bold text-red-700">A</div>
                 <div className="w-8 h-8 rounded-full bg-blue-200 border-2 border-white overflow-hidden text-xs flex items-center justify-center font-bold text-blue-700">B</div>
                 <div className="w-8 h-8 rounded-full bg-green-200 border-2 border-white overflow-hidden text-xs flex items-center justify-center font-bold text-green-700">C</div>
               </div>
               <button
-                onClick={() => triggerToast("Invite family member")}
-                className="w-7 h-7 rounded-full bg-brand-red text-white flex items-center justify-center text-xs hover:bg-brand-red-dark transition"
+                onClick={() => setShowInviteModal(true)}
+                className="w-7 h-7 rounded-full bg-brand-red text-white flex items-center justify-center text-xs hover:bg-brand-red-dark transition shadow-sm"
+                title="Add family member"
               >
                 <Plus size={14} />
               </button>
@@ -215,10 +266,11 @@ const DashboardPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-lg font-extrabold text-brand-green">$ 2,294.00</span>
+            <span className="text-lg font-extrabold text-brand-green">$ {familyBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
             <button
-              onClick={() => triggerToast("Transfer funds between accounts")}
-              className="p-2 text-gray-400 hover:text-gray-600 transition"
+              onClick={() => setShowTransferModal(true)}
+              className="p-2 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+              title="Transfer funds"
             >
               <ArrowRightLeft size={17} />
             </button>
@@ -235,18 +287,40 @@ const DashboardPage = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Last requests</h2>
-            <select className="text-xs font-semibold text-gray-500 bg-transparent border-0 outline-none cursor-pointer">
-              <option>7 days</option>
-              <option>30 days</option>
-              <option>All time</option>
+            <select
+              value={timeRange}
+              onChange={(e) => {
+                setTimeRange(e.target.value);
+                triggerToast(`Filtered requests by ${e.target.value}`);
+              }}
+              className="text-xs font-semibold text-gray-600 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm outline-none cursor-pointer"
+            >
+              <option value="7 days">7 days</option>
+              <option value="30 days">30 days</option>
+              <option value="All time">All time</option>
             </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl p-5 shadow-card border border-gray-100 space-y-3">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">colonoscopy</p>
+            {/* Request Card 1 */}
+            <div
+              onClick={() => setActiveRequestDetail({
+                title: "Colonoscopy Screening Report",
+                type: "colonoscopy",
+                description: "Screening done and colonoscopy (examination of the inside of the large intestine with a flexible viewing instrument) completed with normal mucosa findings. Approved for preventive screening cover.",
+                filesCount: 21,
+                accepted: "60%",
+                date: "2 days ago",
+                hospital: "St. Jude Medical Center",
+              })}
+              className="bg-white rounded-2xl p-5 shadow-card border border-gray-100 space-y-3 cursor-pointer hover:border-brand-green/40 transition"
+            >
+              <div className="flex justify-between items-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">colonoscopy</p>
+                <span className="text-[10px] bg-emerald-50 text-brand-green px-2 py-0.5 rounded font-bold">VERIFIED</span>
+              </div>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Screening done and colonoscopy (examination of the inside of the large intestine with a flexible viewing ...<span onClick={() => triggerToast("Colonoscopy screening full report PDF downloaded")} className="text-brand-red font-semibold cursor-pointer hover:underline">more</span>
+                Screening done and colonoscopy (examination of the inside of the large intestine with a flexible viewing ...<span className="text-brand-red font-semibold underline ml-1">more</span>
               </p>
               <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                 <span className="text-[11px] text-gray-400 font-medium">21 Files attached</span>
@@ -258,10 +332,25 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 shadow-card border border-gray-100 space-y-3">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">blood test</p>
+            {/* Request Card 2 */}
+            <div
+              onClick={() => setActiveRequestDetail({
+                title: "Complete Hematology Blood Test",
+                type: "blood test",
+                description: "The test shows that the person has very few red blood cells (anemia). The same test is repeated after 2 weeks of prescribed iron supplementation therapy.",
+                filesCount: 5,
+                accepted: "60%",
+                date: "5 days ago",
+                hospital: "City Diagnostic Lab",
+              })}
+              className="bg-white rounded-2xl p-5 shadow-card border border-gray-100 space-y-3 cursor-pointer hover:border-brand-green/40 transition"
+            >
+              <div className="flex justify-between items-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">blood test</p>
+                <span className="text-[10px] bg-emerald-50 text-brand-green px-2 py-0.5 rounded font-bold">VERIFIED</span>
+              </div>
               <p className="text-xs text-gray-600 leading-relaxed">
-                The test shows that the person has very few red blood cells (anemia). The same test is repeated after treatment ...<span onClick={() => triggerToast("Blood test complete lab results opened")} className="text-brand-red font-semibold cursor-pointer hover:underline">more</span>
+                The test shows that the person has very few red blood cells (anemia). The same test is repeated after treatment ...<span className="text-brand-red font-semibold underline ml-1">more</span>
               </p>
               <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                 <span className="text-[11px] text-gray-400 font-medium">5 Files attached</span>
@@ -278,14 +367,16 @@ const DashboardPage = () => {
         {/* Section: Statistic (preview) */}
         <div className="bg-white rounded-2xl p-6 shadow-card border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Statistic <span className="text-xs font-normal text-gray-400">(preview)</span></h2>
+            <h2 className="text-sm font-bold text-gray-800 tracking-wide uppercase">
+              Statistic <span className="text-xs font-normal text-gray-400">(preview - click any month)</span>
+            </h2>
             <div className="flex items-center gap-4 text-xs font-semibold">
               <span className="flex items-center gap-1.5 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-brand-green"></span> Income</span>
               <span className="flex items-center gap-1.5 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-brand-red"></span> Outcome</span>
             </div>
           </div>
 
-          {/* Clean, well-proportioned CSS Bar Chart representing monthly statistics */}
+          {/* Clickable CSS Bar Chart representing monthly statistics */}
           <div className="h-44 flex items-end justify-between px-2 pt-4 border-b border-gray-100">
             {[
               { month: "Jan", in: 60, out: 25 },
@@ -301,20 +392,23 @@ const DashboardPage = () => {
               { month: "Nov", in: 90, out: 25 },
               { month: "Dec", in: 100, out: 35 },
             ].map((d) => (
-              <div key={d.month} className="flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <div
+                key={d.month}
+                onClick={() => setActiveMonthDetail(d)}
+                className="flex flex-col items-center gap-1 h-full justify-end group cursor-pointer"
+                title="Click to view month statistics"
+              >
                 <div className="flex items-end gap-1 h-32">
                   <div
-                    className="w-2.5 sm:w-3 bg-brand-green rounded-full group-hover:brightness-110 transition-all duration-300"
+                    className="w-2.5 sm:w-3 bg-brand-green rounded-full group-hover:scale-y-105 transition-all duration-200"
                     style={{ height: `${d.in}%` }}
-                    title={`Income: $${d.in * 100}`}
                   />
                   <div
-                    className="w-2.5 sm:w-3 bg-brand-red rounded-full group-hover:brightness-110 transition-all duration-300"
+                    className="w-2.5 sm:w-3 bg-brand-red rounded-full group-hover:scale-y-105 transition-all duration-200"
                     style={{ height: `${d.out}%` }}
-                    title={`Outcome: $${d.out * 100}`}
                   />
                 </div>
-                <span className="text-[10px] font-semibold text-gray-400 mt-2">{d.month}</span>
+                <span className="text-[10px] font-semibold text-gray-400 group-hover:text-gray-900 mt-2 transition">{d.month}</span>
               </div>
             ))}
           </div>
@@ -329,25 +423,25 @@ const DashboardPage = () => {
           {/* Cover details header */}
           <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
             <h3 className="font-bold text-base text-gray-900">{activeCoverageType}</h3>
-            <span
-              onClick={() => triggerToast("Coverage panel collapsed")}
-              className="text-gray-400 hover:text-gray-600 cursor-pointer p-1"
+            <button
+              onClick={() => triggerToast("All coverage rules validated")}
+              className="text-xs text-brand-green font-bold hover:underline"
             >
-              ✕
-            </span>
+              Validate
+            </button>
           </div>
 
           {/* Coverage Type List (Interactive Checkboxes) */}
           <div className="space-y-3">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Type:</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Type (Click to toggle):</p>
             <ul className="space-y-2.5 text-xs text-gray-700">
               {coverageItems.map((item) => (
                 <li
                   key={item.id}
                   onClick={() => toggleCoverage(item.id)}
-                  className="flex items-center justify-between cursor-pointer p-1.5 -mx-1.5 rounded-lg hover:bg-gray-50 transition select-none"
+                  className="flex items-center justify-between cursor-pointer p-2 -mx-2 rounded-xl hover:bg-gray-50 transition select-none"
                 >
-                  <span className={item.checked ? "font-semibold text-gray-800" : "text-gray-500"}>
+                  <span className={item.checked ? "font-bold text-gray-800" : "text-gray-500"}>
                     {item.label}
                   </span>
                   {item.checked ? (
@@ -365,15 +459,22 @@ const DashboardPage = () => {
         <div className="space-y-4 pt-4 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Payment Method:</span>
-            <select className="text-xs font-semibold text-gray-500 bg-transparent border-0 outline-none cursor-pointer">
-              <option>Monthly</option>
-              <option>Yearly</option>
+            <select
+              value={paymentMethod === "Credit" ? "Monthly" : "Yearly"}
+              onChange={(e) => triggerToast(`Billing cycle switched to ${e.target.value}`)}
+              className="text-xs font-semibold text-gray-500 bg-transparent border-0 outline-none cursor-pointer"
+            >
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
             </select>
           </div>
 
           <div className="flex justify-center gap-1 bg-gray-100 p-1 rounded-full w-fit mx-auto">
             <button
-              onClick={() => setPaymentMethod("Credit")}
+              onClick={() => {
+                setPaymentMethod("Credit");
+                triggerToast("Switched to Credit Cards view");
+              }}
               className={`px-4 py-1.5 text-xs font-bold rounded-full transition flex items-center gap-1.5 ${
                 paymentMethod === "Credit" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
               }`}
@@ -381,7 +482,10 @@ const DashboardPage = () => {
               Credit <span className="bg-brand-green text-white text-[9px] px-1.5 py-0.5 rounded-full font-extrabold">3</span>
             </button>
             <button
-              onClick={() => setPaymentMethod("Debit")}
+              onClick={() => {
+                setPaymentMethod("Debit");
+                triggerToast("Switched to Debit Cards view");
+              }}
               className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
                 paymentMethod === "Debit" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
               }`}
@@ -390,32 +494,35 @@ const DashboardPage = () => {
             </button>
           </div>
 
-          {/* Virtual Credit Card Display */}
-          <div className="relative bg-gradient-to-tr from-blue-600 via-indigo-600 to-indigo-500 text-white rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between overflow-hidden group">
+          {/* Virtual Credit Card Display (Clickable to inspect) */}
+          <div
+            onClick={() => triggerToast("Virtual VISA card verified & active")}
+            className="relative bg-gradient-to-tr from-blue-600 via-indigo-600 to-indigo-500 text-white rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between overflow-hidden group cursor-pointer"
+          >
             <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500" />
             <div className="flex justify-between items-start">
               <span className="font-extrabold text-base italic tracking-widest">VISA</span>
               <CreditCardIcon size={20} className="text-white/80" />
             </div>
             <div>
-              <p className="text-sm tracking-widest font-mono font-bold">4766 1901 **** 2751</p>
-              <p className="text-[11px] text-white/80 font-medium mt-1">$ 24,235.2 <span className="text-[9px] text-white/60">(USD)</span></p>
+              <p className="text-sm tracking-widest font-mono font-bold">{cardInfo.number}</p>
+              <p className="text-[11px] text-white/80 font-medium mt-1">$ {virtualBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-[9px] text-white/60">(USD)</span></p>
             </div>
             <div className="flex justify-between items-end text-[10px]">
-              <span className="font-bold uppercase tracking-wider">Stave Cruz</span>
-              <span className="text-white/80 font-mono">EXPIRES 05/26</span>
+              <span className="font-bold uppercase tracking-wider">{cardInfo.name}</span>
+              <span className="text-white/80 font-mono">EXPIRES {cardInfo.expiry}</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between text-xs text-brand-green font-bold pt-1">
             <button
-              onClick={() => triggerToast("Edit virtual card details")}
+              onClick={() => setShowEditCardModal(true)}
               className="flex items-center gap-1 hover:underline"
             >
               <Edit size={13} /> Edit Card
             </button>
             <button
-              onClick={() => triggerToast("Add new credit/debit card modal")}
+              onClick={() => setShowAddCardModal(true)}
               className="flex items-center gap-1 hover:underline"
             >
               + Add Card
@@ -446,7 +553,10 @@ const DashboardPage = () => {
               <button
                 key={amt}
                 type="button"
-                onClick={() => setDepositAmount(amt)}
+                onClick={() => {
+                  setDepositAmount(amt);
+                  triggerToast(`Selected amount: $${amt} USD`);
+                }}
                 className={`py-2 rounded-xl transition ${
                   depositAmount === amt
                     ? "bg-brand-green text-white shadow-sm"
@@ -461,6 +571,8 @@ const DashboardPage = () => {
 
       </div>
 
+      {/* ── MODALS FOR 100% INTERACTIVE EXPERIENCE ────────────────────── */}
+
       {/* Top Up Modal */}
       {showTopUpModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -473,17 +585,14 @@ const DashboardPage = () => {
                 <X size={20} />
               </button>
             </div>
-            <p className="text-xs text-gray-600">
-              Select or enter an amount to top up your Family Insurance Benefit Pool.
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Select an amount below to top up your Family Insurance Benefit Pool immediately.
             </p>
             <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
-              {["500", "1000", "2500"].map((val) => (
+              {[500, 1000, 2500].map((val) => (
                 <button
                   key={val}
-                  onClick={() => {
-                    triggerToast(`Family pool topped up by $${val}.00!`);
-                    setShowTopUpModal(false);
-                  }}
+                  onClick={() => handleTopUp(val)}
                   className="py-3 bg-emerald-50 text-brand-green hover:bg-emerald-100 rounded-xl transition"
                 >
                   + ${val}
@@ -511,28 +620,38 @@ const DashboardPage = () => {
               </button>
             </div>
             <p className="text-xs text-gray-600">
-              Explore our customized insurance packages with instant quote calculation.
+              Click any package below to add it to your active insurance coverage portfolio.
             </p>
             <div className="space-y-2 text-xs">
               <div
                 onClick={() => {
-                  triggerToast("Travel Insurance coverage added to your wishlist");
+                  triggerToast("✈️ Travel Protection Plan added to your portfolio!");
                   setShowAddPlanModal(false);
                 }}
                 className="p-3 bg-gray-50 hover:bg-emerald-50 rounded-xl cursor-pointer font-semibold flex justify-between items-center transition"
               >
                 <span>✈️ Travel Protection Plan</span>
-                <span className="text-brand-green">$25 / mo</span>
+                <span className="text-brand-green font-bold">$25 / mo</span>
               </div>
               <div
                 onClick={() => {
-                  triggerToast("Business Comprehensive plan selected");
+                  triggerToast("🏢 Business Comprehensive plan selected & activated!");
                   setShowAddPlanModal(false);
                 }}
                 className="p-3 bg-gray-50 hover:bg-emerald-50 rounded-xl cursor-pointer font-semibold flex justify-between items-center transition"
               >
                 <span>🏢 Business Comprehensive</span>
-                <span className="text-brand-green">$120 / mo</span>
+                <span className="text-brand-green font-bold">$120 / mo</span>
+              </div>
+              <div
+                onClick={() => {
+                  triggerToast("🐾 Pet Health Care Cover activated!");
+                  setShowAddPlanModal(false);
+                }}
+                className="p-3 bg-gray-50 hover:bg-emerald-50 rounded-xl cursor-pointer font-semibold flex justify-between items-center transition"
+              >
+                <span>🐾 Pet Health Care Shield</span>
+                <span className="text-brand-green font-bold">$18 / mo</span>
               </div>
             </div>
             <button
@@ -544,6 +663,271 @@ const DashboardPage = () => {
           </div>
         </div>
       )}
+
+      {/* Sort Modal */}
+      {showSortModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Sort Dashboard Cards</h3>
+              <button onClick={() => setShowSortModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-2 text-xs">
+              {["By Premium Amount (High to Low)", "By Remaining Balance", "By Expiry Date (Earliest First)", "Alphabetical Order"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => {
+                    triggerToast(`Sorted widgets: ${opt}`);
+                    setShowSortModal(false);
+                  }}
+                  className="w-full text-left p-3 rounded-xl bg-gray-50 hover:bg-emerald-50 hover:text-brand-green font-semibold transition"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Dashboard Settings</h3>
+              <button onClick={() => setShowSettingsModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl font-semibold">
+                <span>Email Notifications</span>
+                <span className="text-brand-green">Enabled</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl font-semibold">
+                <span>Auto-renewal for active policies</span>
+                <span className="text-brand-green">Active</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl font-semibold">
+                <span>Preferred Currency</span>
+                <span className="font-bold text-gray-800">USD ($)</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                triggerToast("Settings saved successfully!");
+                setShowSettingsModal(false);
+              }}
+              className="w-full py-3 bg-brand-green text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition"
+            >
+              Save Preferences
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Family Member Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Family Insurance Members</h3>
+              <button onClick={() => setShowInviteModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <span className="font-bold">Alice Cruz (Primary)</span>
+                <span className="text-brand-green font-semibold">Active</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <span className="font-bold">Bob Cruz (Spouse)</span>
+                <span className="text-brand-green font-semibold">Active</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <span className="font-bold">Charlie Cruz (Child)</span>
+                <span className="text-brand-green font-semibold">Active</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                triggerToast("Invitation email sent to new family member!");
+                setShowInviteModal(false);
+              }}
+              className="w-full py-3 bg-brand-red text-white font-bold text-xs rounded-xl hover:bg-brand-red-dark transition"
+            >
+              + Invite Another Member
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Funds Modal */}
+      {showTransferModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Transfer Family Funds</h3>
+              <button onClick={() => setShowTransferModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-600">
+              Transfer remaining balance between your personal and family benefit pools.
+            </p>
+            <button
+              onClick={() => {
+                triggerToast("Transferred $250.00 to Personal Auto coverage");
+                setShowTransferModal(false);
+              }}
+              className="w-full py-3 bg-brand-green text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition"
+            >
+              Transfer $250.00 to Personal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Card Modal */}
+      {showEditCardModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Edit Virtual Card</h3>
+              <button onClick={() => setShowEditCardModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-gray-500 font-semibold mb-1">Cardholder Name</label>
+                <input
+                  type="text"
+                  value={cardInfo.name}
+                  onChange={(e) => setCardInfo({ ...cardInfo, name: e.target.value })}
+                  className="w-full p-3 bg-gray-50 rounded-xl outline-none border border-gray-200 font-bold"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-500 font-semibold mb-1">Expiry Date</label>
+                <input
+                  type="text"
+                  value={cardInfo.expiry}
+                  onChange={(e) => setCardInfo({ ...cardInfo, expiry: e.target.value })}
+                  className="w-full p-3 bg-gray-50 rounded-xl outline-none border border-gray-200 font-bold"
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                triggerToast("Virtual card details updated!");
+                setShowEditCardModal(false);
+              }}
+              className="w-full py-3 bg-brand-green text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Card Modal */}
+      {showAddCardModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Add Payment Card</h3>
+              <button onClick={() => setShowAddCardModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-600">
+              Link a new VISA, MasterCard, or American Express credit card for automatic monthly premium billing.
+            </p>
+            <button
+              onClick={() => {
+                triggerToast("New MasterCard linked successfully!");
+                setShowAddCardModal(false);
+              }}
+              className="w-full py-3 bg-brand-green text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition"
+            >
+              Link Card Automatically
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Request Detail Modal */}
+      {activeRequestDetail && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <span className="text-[10px] uppercase font-extrabold text-brand-green">{activeRequestDetail.type}</span>
+                <h3 className="text-base font-bold text-gray-900 mt-0.5">{activeRequestDetail.title}</h3>
+              </div>
+              <button onClick={() => setActiveRequestDetail(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-700 leading-relaxed">{activeRequestDetail.description}</p>
+            <div className="bg-gray-50 p-3 rounded-xl text-xs space-y-1">
+              <p><strong>Hospital / Provider:</strong> {activeRequestDetail.hospital}</p>
+              <p><strong>Date Submitted:</strong> {activeRequestDetail.date}</p>
+              <p><strong>Files Attached:</strong> {activeRequestDetail.filesCount} medical records</p>
+              <p><strong>Insurance Coverage Acceptance:</strong> {activeRequestDetail.accepted}</p>
+            </div>
+            <button
+              onClick={() => {
+                triggerToast("Medical records PDF downloaded to your device");
+                setActiveRequestDetail(null);
+              }}
+              className="w-full py-3 bg-brand-green text-white font-bold text-xs rounded-xl hover:bg-emerald-600 transition flex items-center justify-center gap-2"
+            >
+              <Download size={15} /> Download Full Report
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Month Statistic Modal */}
+      {activeMonthDetail && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-base font-bold text-gray-900">{activeMonthDetail.month} 2026 Financial Overview</h3>
+              <button onClick={() => setActiveMonthDetail(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl text-brand-green font-bold">
+                <span>Total Income / Deposits:</span>
+                <span>$ {(activeMonthDetail.in * 100).toLocaleString()} USD</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-red-50 rounded-xl text-brand-red font-bold">
+                <span>Total Premium Outcome:</span>
+                <span>$ {(activeMonthDetail.out * 100).toLocaleString()} USD</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl text-gray-800 font-extrabold">
+                <span>Net Monthly Benefit:</span>
+                <span>+$ {((activeMonthDetail.in - activeMonthDetail.out) * 100).toLocaleString()} USD</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveMonthDetail(null)}
+              className="w-full py-3 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
