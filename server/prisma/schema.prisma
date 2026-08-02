@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -37,20 +37,20 @@ model User{
   password  String
   role Role @default(CUSTOMER)
 
-  customer CUSTOMER?
+  customer Customer?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model customer{
+model Customer{
   id String @id @default(cuid())
   fullName String
   phone String
   dob DateTime
   address String
   userId String @unique
-  user User @relations(fields: [userId],references: [id])
+  user User @relation(fields: [userId],references: [id])
   policies Policy[]
   documents Document[]
   createdAt DateTime @default(now())
