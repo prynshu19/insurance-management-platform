@@ -50,7 +50,17 @@ const login = async (req, res) => {
   }
 };
 
-const getProfile = async (req, res) => {};
+const getProfile = async (req, res) => {
+
+  res.json({
+    success: true,
+    data: {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+    },
+  });
+};
 
 module.exports = {
   register,
