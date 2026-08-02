@@ -38,6 +38,40 @@ const registerUser = async (data) => {
   };
 };
 
+const loginUser = async (data) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: data.email,
+    },
+  });
+
+  if (!user) {
+    throw new Error("Invalid email or password");
+  }
+
+  const isMatch = await bcrypt.compare(data.password, user.password);
+
+  if (!isMatch) {
+    throw new Error("Invalid email or password");
+  }
+
+  const token = generateToken({
+    id: user.id,
+    role: user.role,
+  });
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+
+    token,
+  };
+};
+
 module.exports = {
   registerUser,
+  loginUser
 };
