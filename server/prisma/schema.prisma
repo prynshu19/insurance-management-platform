@@ -4,139 +4,194 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-enum Role{
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
   ADMIN
   AGENT
   CUSTOMER
 }
 
-enum PolicyStatus{
+enum PolicyStatus {
   ACTIVE
   EXPIRED
   CANCELLED
 }
 
-enum ClaimStatus{
+enum PolicyType {
+  LIFE
+  HEALTH
+  AUTO
+  HOME
+  TRAVEL
+  BUSINESS
+}
+
+enum ClaimStatus {
   PENDING
   APPROVED
   REJECTED
+  UNDER_REVIEW
 }
 
-enum PaymentStatus{
+enum PaymentStatus {
   PENDING
   PAID
   OVERDUE
+  CANCELLED
 }
 
-model User{
-  id    String @id @default(cuid())
-  email  String @unique
+enum DocumentType {
+  ID_PROOF
+  ADDRESS_PROOF
+  POLICY_DOCUMENT
+  CLAIM_DOCUMENT
+  OTHER
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
   password  String
-  role Role @default(CUSTOMER)
+  role      Role     @default(CUSTOMER)
+  isActive  Boolean  @default(true)
 
-  customer Customer?
+  customer  Customer?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
 }
 
-model Customer{
-  id String @id @default(cuid())
-  fullName String
-  phone String
-  dob DateTime
-  address String
-  userId String @unique
-  user User @relation(fields: [userId],references: [id])
-  policies Policy[]
+model Customer {
+  id        String    @id @default(cuid())
+  fullName  String
+  phone     String    @unique
+  dob       DateTime
+  address   String
+  city      String?
+  state     String?
+  zipCode   String?
+
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  policies  Policy[]
   documents Document[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?  // soft delete
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([fullName])
+  @@index([phone])
+  @@index([userId])
 }
 
 model Policy {
-  id             String        @id @default(cuid())
+  id            String       @id @default(cuid())
+  policyNumber  String       @unique
+  policyType    PolicyType
+  description   String?
+  coverageAmount Decimal
+  premiumAmount Decimal
+  startDate     DateTime
+  endDate       DateTime
+  status        PolicyStatus @default(ACTIVE)
 
-  policyNumber   String        @unique
+  customerId    String
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  policyType     String
+  claims        Claim[]
+  payments      PremiumPayment[]
+  documents     Document[]
 
-  premiumAmount  Decimal
+  deletedAt     DateTime?    // soft delete
 
-  startDate      DateTime
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  endDate        DateTime
-
-  status         PolicyStatus  @default(ACTIVE)
-
-  customerId     String
-
-  customer        Customer @relation(fields: [customerId], references: [id])
-
-  claims          Claim[]
-
-  payments        PremiumPayment[]
-
-  createdAt      DateTime @default(now())
-
-  updatedAt      DateTime @updatedAt
+  @@index([customerId])
+  @@index([status])
+  @@index([policyType])
+  @@index([policyNumber])
 }
 
 model Claim {
-  id              String      @id @default(cuid())
+  id             String      @id @default(cuid())
+  claimNumber    String      @unique @default(cuid())
+  claimAmount    Decimal
+  reason         String
+  description    String?
+  status         ClaimStatus @default(PENDING)
+  submissionDate DateTime    @default(now())
+  resolvedDate   DateTime?
+  reviewerNote   String?
 
-  claimAmount     Decimal
+  policyId       String
+  policy         Policy      @relation(fields: [policyId], references: [id], onDelete: Cascade)
 
-  reason          String
+  documents      Document[]
 
-  status          ClaimStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  submissionDate  DateTime    @default(now())
-
-  policyId        String
-
-  policy          Policy @relation(fields:[policyId], references:[id])
-
-  createdAt       DateTime @default(now())
-
-  updatedAt       DateTime @updatedAt
+  @@index([policyId])
+  @@index([status])
+  @@index([submissionDate])
 }
 
 model PremiumPayment {
+  id            String        @id @default(cuid())
+  amount        Decimal
+  paymentDate   DateTime      @default(now())
+  dueDate       DateTime?
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String?       // e.g. "CREDIT_CARD", "BANK_TRANSFER"
+  transactionId String?       @unique
 
-  id             String @id @default(cuid())
+  policyId      String
+  policy        Policy        @relation(fields: [policyId], references: [id], onDelete: Cascade)
 
-  amount         Decimal
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  paymentDate    DateTime @default(now())
-
-  paymentStatus  PaymentStatus @default(PENDING)
-
-  policyId       String
-
-  policy         Policy @relation(fields:[policyId], references:[id])
-
-  createdAt      DateTime @default(now())
-
-  updatedAt      DateTime @updatedAt
+  @@index([policyId])
+  @@index([paymentStatus])
+  @@index([dueDate])
 }
 
 model Document {
-
-  id           String @id @default(cuid())
-
+  id           String       @id @default(cuid())
   fileName     String
-
+  originalName String
   filePath     String
+  fileType     DocumentType @default(OTHER)
+  mimeType     String
+  fileSize     Int          // in bytes
 
-  customerId   String
+  customerId   String?
+  customer     Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
-  customer     Customer @relation(fields:[customerId], references:[id])
+  policyId     String?
+  policy       Policy?      @relation(fields: [policyId], references: [id], onDelete: SetNull)
 
-  createdAt    DateTime @default(now())
+  claimId      String?
+  claim        Claim?       @relation(fields: [claimId], references: [id], onDelete: SetNull)
 
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([customerId])
+  @@index([policyId])
+  @@index([claimId])
 }
