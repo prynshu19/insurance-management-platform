@@ -1,0 +1,11 @@
+{
+  "name": "insurance-management-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "build:client": "npm --prefix client install && npm --prefix client run build",
+    "build:server": "npm --prefix server install && npm --prefix server run build",
+    "start:server": "npm --prefix server start"
+  }
+}
