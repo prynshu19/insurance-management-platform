@@ -1,69 +1,36 @@
-const { registerSchema } = require("../validators/auth.validator");
+const { registerUser, loginUser, changePassword } = require("../services/auth.service");
+const { registerSchema, loginSchema, changePasswordSchema } = require("../validators/auth.validator");
+const { sendSuccess, sendCreated } = require("../utils/ApiResponse");
 
-const { registerUser } = require("../services/auth.service");
-
-const { loginSchema } = require("../validators/auth.validator");
-
-const { loginUser } = require("../services/auth.service");
-
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
-    const validatedData = registerSchema.parse(req.body);
-
-    const result = await registerUser(validatedData);
-
-    res.status(201).json({
-      success: true,
-
-      message: "User registered successfully",
-
-      data: result,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-
-      message: error.message,
-    });
-  }
+    const data = registerSchema.parse(req.body);
+    const result = await registerUser(data);
+    return sendCreated(res, result, "Account registered successfully");
+  } catch (error) { next(error); }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
-    const validatedData = loginSchema.parse(req.body);
-
-    const result = await loginUser(validatedData);
-
-    res.json({
-      success: true,
-
-      message: "Login successful",
-
-      data: result,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-
-      message: error.message,
-    });
-  }
+    const data = loginSchema.parse(req.body);
+    const result = await loginUser(data);
+    return sendSuccess(res, result, "Login successful");
+  } catch (error) { next(error); }
 };
 
-const getProfile = async (req, res) => {
-
-  res.json({
-    success: true,
-    data: {
-      id: req.user.id,
-      email: req.user.email,
-      role: req.user.role,
-    },
-  });
+const getProfile = async (req, res, next) => {
+  try {
+    const { id, name, email, role } = req.user;
+    return sendSuccess(res, { id, name, email, role }, "Profile retrieved successfully");
+  } catch (error) { next(error); }
 };
 
-module.exports = {
-  register,
-  login,
-  getProfile,
+const changePasswordController = async (req, res, next) => {
+  try {
+    const data = changePasswordSchema.parse(req.body);
+    const result = await changePassword(req.user.id, data);
+    return sendSuccess(res, null, result.message);
+  } catch (error) { next(error); }
 };
+
+module.exports = { register, login, getProfile, changePasswordController };

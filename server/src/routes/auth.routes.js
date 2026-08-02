@@ -3,22 +3,19 @@ const express = require("express");
 const router = express.Router();
 
 const { protect } = require("../middlewares/auth.middleware");
-
 const {
   register,
   login,
   getProfile,
+  changePasswordController,
 } = require("../controllers/auth.controller");
-const { authorize } = require("../middlewares/role.middleware");
 
-router.get("/profile", protect, getProfile);
-
-router.post("/", protect, authorize("ADMIN,AGENT"), createCustomer);
-
+// ─── Public Routes ────────────────────────────────────────────────────────────
 router.post("/register", register);
-
 router.post("/login", login);
 
-router.get("/profile", getProfile);
+// ─── Protected Routes ─────────────────────────────────────────────────────────
+router.get("/profile", protect, getProfile);
+router.put("/change-password", protect, changePasswordController);
 
 module.exports = router;
