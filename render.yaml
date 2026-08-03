@@ -9,7 +9,7 @@ services:
     name: insurance-management-platform
     runtime: node
     plan: free
-    buildCommand: npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start
     envVars:
       - key: DATABASE_URL
