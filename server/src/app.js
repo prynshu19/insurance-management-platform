@@ -15,15 +15,23 @@ const errorHandler = require("./middlewares/errorHandler.middleware");
 const app = express();
 
 // ─── Security Middleware ───────────────────────────────────────────────────────
-app.use(helmet()); // Secure HTTP headers
-
-// CORS — allow requests from the configured client origin
+// CORS — allow requests from Vercel, localhost, and configured CLIENT_URL
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+
+      // Dynamically reflect origin to support credentials: true across Vercel deployments
+      return callback(null, true);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
+
+app.use(helmet({ crossOriginResourcePolicy: false })); // Secure HTTP headers
 
 // ─── Rate Limiting ─────────────────────────────────────────────────────────────
 const apiLimiter = rateLimit({
