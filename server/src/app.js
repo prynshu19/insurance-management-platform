@@ -81,7 +81,7 @@ const clientBuildPath = path.join(__dirname, "../../client/dist");
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
 
-  app.get("*", (req, res, next) => {
+  app.get(/(.*)/, (req, res, next) => {
     if (req.originalUrl.startsWith("/api") || req.originalUrl.startsWith("/health")) {
       return next();
     }
